@@ -48,7 +48,7 @@ This paper extends our LEO reliability research from reliability estimation to s
 
 Most classical satellite task-scheduling work focuses on observation-window assignment, priority maximization, or visibility-aware association. In congestion-stressed LEO networks, this is insufficient. A satellite may be visible for observation but unable to downlink the produced data before the deadline. Similarly, choosing the earliest or highest-priority meta-task may overload scarce S2G windows and reduce completed EO products. The key distinction of this paper is full-chain service completion under congestion: observation feasibility, S2G capacity, one-hop ISL fallback, multi-satellite atomic-task splitting, and deadline reliability are evaluated together before a meta-task is accepted. This paper does not claim a globally optimal scheduler; it proposes a reproducible online heuristic for this stricter scheduling model.
 
-The main contributions are:
+The main contributions of this paper are:
 \begin{itemize}
 \item We formulate EO task scheduling as a reliability-aware, congestion-stressed LEO scheduling problem involving atomic observations, S2G downlink capacity, ISL relay opportunities, deadlines, and meta-task priorities.
 \item We propose RACS, a lightweight heuristic scheduler that combines reliability margin, congestion ratio, urgency, priority, delay, multi-satellite atomic-task splitting, split downlink, and one-hop relay fallback.
@@ -77,7 +77,7 @@ This section defines the scheduling entities, reliability and congestion metrics
 \subsection{Network and Task Model}
 Let $\mathcal{S}$ be the set of LEO satellites, $\mathcal{G}$ the ground stations, and $\mathcal{T}$ the set of EO meta-tasks. Each meta-task $i\in\mathcal{T}$ has priority $p_i$, arrival time $a_i$, deadline $d_i$, and a set of atomic observation tasks $\mathcal{A}_i$. Atomic task $j\in\mathcal{A}_i$ has observation duration $\tau_j$ and generated data volume $v_j$.
 
-The dataset provides three window sets: observation windows $\mathcal{W}^{obs}$, S2G downlink windows $\mathcal{W}^{s2g}$, and ISL windows $\mathcal{W}^{isl}$. An observation window indicates that satellite $s$ can observe atomic task $j$ during $[b,e]$. An S2G window indicates that satellite $s$ can downlink to ground station $g$ with bandwidth $B$ during $[b,e]$. The corresponding capacity is
+The dataset provides three window sets: observation windows $\mathcal{W}^{obs}$, S2G downlink windows $\mathcal{W}^{s2g}$, and ISL windows $\mathcal{W}^{isl}$. Fig.~\ref{fig:system} shows the full-chain scheduling flow from EO meta-task arrival to visible-satellite filtering, atomic-task assignment, S2G/ISL delivery, and final reliability--congestion scoring. An observation window indicates that satellite $s$ can observe atomic task $j$ during $[b,e]$. An S2G window indicates that satellite $s$ can downlink to ground station $g$ with bandwidth $B$ during $[b,e]$. The corresponding capacity is
 \begin{equation}
 C^{s2g}_{w} = \frac{B_w(e_w-b_w)}{8},
 \end{equation}
@@ -125,14 +125,14 @@ S_q ={}& 4.0\frac{p_i}{10}+2.8R_q+1.2H_i+0.4M_q\\
 where $H_i$ is urgency, $M_q$ is split-assignment gain, $N^{relay}_q$ is the number of relay uses, and $D_q$ is normalized completion delay. The weights are normalization constants selected to prioritize completion reliability and downlink capacity margin over small delay differences. They are not learned parameters, and the paper does not claim that this weight vector is globally optimal. The main empirical claim is therefore not coefficient optimality; it is that full-chain feasibility expansion through atomic splitting, split downlink, and bounded relay improves completion under congestion stress.
 
 \subsection{Design Rationale}
-The score in (6) addresses a weakness of priority-only and deadline-only rules: they may select meta-tasks that are locally favorable but consume scarce delivery capacity. The reliability term rewards deadline and downlink-capacity margin. The congestion term penalizes plans that nearly exhaust a selected S2G window. The split-gain term encourages multiple-satellite use only when it increases feasibility. The relay penalty discourages unnecessary ISL use when direct downlink is available. Thus, RACS is a feasibility-first, weighted multi-objective heuristic for complete EO service delivery.
+The score in equation (6) addresses a weakness of priority-only and deadline-only rules: they may select meta-tasks that are locally favorable but consume scarce delivery capacity. The reliability term rewards deadline and downlink-capacity margin. The congestion term penalizes plans that nearly exhaust a selected S2G window. The split-gain term encourages multiple-satellite use only when it increases feasibility. The relay penalty discourages unnecessary ISL use when direct downlink is available. Thus, RACS is a feasibility-first, weighted multi-objective heuristic for complete EO service delivery.
 
 \subsection{Computational Cost}
 For a meta-task with $A_i$ atomic observations, $|\mathcal{S}|$ satellites, at most $W^{obs}$ observation windows per atomic task, $W^{s2g}$ downlink windows per satellite, and $W^{isl}$ relay windows, the dominant search cost is approximately
 \begin{equation}
 O(A_i|\mathcal{S}|W^{obs}+|\mathcal{S}|(W^{s2g}+W^{isl}W^{s2g})).
 \end{equation}
-This is suitable for online heuristic scheduling because the algorithm checks feasible windows directly and reserves resources greedily. The dominant factor in the evaluated instances is the observation-candidate search over satellites and atomic tasks, followed by S2G/ISL delivery checks. RACS does not solve a global mixed-integer program, so it trades optimality guarantees for low implementation complexity and fast rescheduling.
+This is suitable for online heuristic scheduling because the algorithm checks feasible windows directly and reserves resources greedily. The dominant factor in the evaluated instances is the observation-candidate search over satellites and atomic tasks, followed by S2G/ISL delivery checks. Algorithm~\ref{alg:racs} summarizes the complete RACS procedure: meta-tasks are ordered by deadline tightness, priority, and data volume; atomic observations are assigned using visible satellites; direct split downlink is attempted first; and one-hop relay is searched only when direct delivery is infeasible. RACS does not solve a global mixed-integer program, so it trades optimality guarantees for low implementation complexity and fast rescheduling.
 
 \begin{algorithm}[t]
 \caption{RACS: Reliability-Aware Congestion-Stressed Scheduling}
@@ -205,7 +205,7 @@ We also implemented a restricted candidate-plan MILP check for the 5-satellite i
 This section reports base-scenario performance, stress-scenario behavior, ablation evidence, statistical confidence, runtime, fairness, and the main limitations of the study.
 
 \subsection{Base Normal and Congested Scenarios}
-Table~\ref{tab:base_results} shows average results by scenario group. In normal instances, RACS increases completion rate from 0.900 for reliability-only scheduling to 0.958, while reducing deadline miss rate from 0.100 to 0.042. In congested instances, the margin is smaller but consistent: completion improves from 0.713 to 0.743, and mean congestion ratio decreases from 0.323 to 0.272. This indicates that RACS accepts more meta-tasks while using less congested delivery plans.
+Table~\ref{tab:base_results} shows average results by scenario group, and Fig.~\ref{fig:completion} visualizes the corresponding base-scenario completion rates. In normal instances, RACS increases completion rate from 0.900 for reliability-only scheduling to 0.958, while reducing deadline miss rate from 0.100 to 0.042. In congested instances, the margin is smaller but consistent: completion improves from 0.713 to 0.743, and mean congestion ratio decreases from 0.323 to 0.272. This indicates that RACS accepts more meta-tasks while using less congested delivery plans.
 
 \begin{table}[t]
 \caption{Average base-scenario results by policy group. Comp. is the completion rate, Reward is normalized completed priority, Miss is the deadline-miss rate, and Cong. is mean downlink congestion ratio.}
@@ -239,7 +239,7 @@ Case & Policy & Comp. & Reward & Miss & Cong.\\
 \end{figure}
 
 \subsection{Stress Scenarios}
-The benefit of RACS is clearer under controlled stress. Table~\ref{tab:stress_results} reports representative stress results. Under combined stress, RACS improves completion rate from 0.626 to 0.806 compared with reliability-only scheduling and reduces deadline miss rate from 0.374 to 0.194. The gain comes from using feasible visible satellites, splitting downlink across multiple windows, and using relay fallback when direct delivery is insufficient.
+The benefit of RACS is clearer under controlled stress. Table~\ref{tab:stress_results} reports representative stress results, while Fig.~\ref{fig:stress_completion} summarizes completion-rate changes across the stress scenarios. Under combined stress, RACS improves completion rate from 0.626 to 0.806 compared with reliability-only scheduling and reduces deadline miss rate from 0.374 to 0.194. The gain comes from using feasible visible satellites, splitting downlink across multiple windows, and using relay fallback when direct delivery is insufficient.
 
 \begin{table}[t]
 \caption{Controlled-stress results for reliability-only scheduling and RACS. RACS has the largest advantage when deadline, bandwidth, and data-volume stress are combined.}
