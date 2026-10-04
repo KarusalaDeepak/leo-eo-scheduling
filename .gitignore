@@ -22,3 +22,7 @@ results/
 *.out
 *.synctex.gz
 *.toc
+
+# Rendered review intermediates and downloadable packages.
+revision/tmp/
+revision/output/
