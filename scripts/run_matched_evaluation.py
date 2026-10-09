@@ -88,30 +88,8 @@ def figures(frame, sensitivity, output):
     output.mkdir(parents=True,exist_ok=True)
     plt.rcParams.update({'font.size':9,'pdf.fonttype':42})
     grouped = frame.groupby(['stress','instance','policy'])[METRICS].mean().reset_index()
-    fig,axes = plt.subplots(1,2,figsize=(7.1,2.55),layout='constrained')
-    labels = {'single_margin':'Single margin','full_earliest':'Full earliest',
-              'full_margin':'Full margin','full_congestion':'Full congestion',
-              'full_racs':'RACS','full_learned':'Full learned','full_random':'Full random'}
-    for policy,label in labels.items():
-        means,lows,highs = [],[],[]
-        for stress in STRESSES:
-            vals = grouped.query('policy==@policy and stress==@stress').completion.to_numpy()
-            rng=np.random.default_rng(2026)
-            boots=rng.choice(vals,(3000,len(vals)),replace=True).mean(axis=1)
-            means.append(vals.mean());lo,hi=np.quantile(boots,[.025,.975]);lows.append(lo);highs.append(hi)
-        axes[0].plot(range(5),means,marker='o',markersize=3,label=label)
-        # Uncertainty is shown separately in CSV; error bars only on RACS to
-        # avoid an unreadable overlay of six broad nine-instance intervals.
-        if policy=='full_racs': axes[0].errorbar(range(5),means,yerr=[np.array(means)-lows,np.array(highs)-means],fmt='none',capsize=2,color='black',alpha=.5)
-    axes[0].set_xticks(range(5),['Base','Tight','BW','Volume','Joint'])
-    axes[0].set_ylabel('Completed fraction');axes[0].grid(alpha=.2)
-    axes[0].set_title('(a) Matched scheduling options')
-    base=frame.query('stress=="base" and policy=="full_racs" and ~instance.str.contains("Congested|Tiny")',engine='python').sort_values('satellites')
-    axes[1].plot(base.satellites,base.runtime_ms,'o-',color='#176d81')
-    axes[1].set_xlabel('Satellites (tasks increase too)');axes[1].set_ylabel('Scheduling time (ms)')
-    axes[1].set_title('(b) Measured RACS runtime');axes[1].grid(alpha=.2)
-    fig.legend(*axes[0].get_legend_handles_labels(),loc='outside lower center',ncol=4,frameon=False,fontsize=8)
-    fig.savefig(output/'matched_results.pdf');fig.savefig(output/'matched_results.png',dpi=200);plt.close(fig)
+    from plot_matched_results import plot_matched_results
+    plot_matched_results(frame, pd.read_csv(output.parent/'paired_statistics.csv'), output)
     fig,ax=plt.subplots(figsize=(4,2.3),layout='constrained')
     for term,rows in sensitivity.groupby('term'):
         avg=rows.groupby('factor').completion.mean()

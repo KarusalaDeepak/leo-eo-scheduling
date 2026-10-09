@@ -26,3 +26,10 @@ results/
 # Rendered review intermediates and downloadable packages.
 revision/tmp/
 revision/output/
+
+# Manuscripts and generated paper assets are local-only.
+/revision/
+/figures/
+*.tex
+*.pdf
+*.zip

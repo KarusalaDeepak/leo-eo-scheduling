@@ -35,7 +35,8 @@ def main():
     for policy,label in [('equal','RACS equal'),('calibrated','RACS calibrated')]:
         base=summary[(summary.stress=='base') & (summary.policy==policy)].iloc[0]
         joint=summary[(summary.stress=='combined') & (summary.policy==policy)].iloc[0]
-        additions.append(f'{label} & {base.completion:.3f} & {joint.completion:.3f} & {joint.reward:.3f} & {joint.congestion:.3f} & {joint.fairness:.3f} & {joint.runtime_ms:.1f} '+r'\\')
+        selection = 'Equal score' if policy == 'equal' else 'Tuned score'
+        additions.append(f'{label} & {selection} & {base.completion:.3f} & {joint.completion:.3f} & {joint.reward:.3f} & {joint.congestion:.3f} & {joint.fairness:.3f} & {joint.runtime_ms:.1f} '+r'\\')
     (ROOT/'revision/calibrated_comparison_rows.tex').write_text('\\newcommand{\\CalibratedComparisonRows}{%\n'+'\n'.join(additions)+'%\n}\n')
     # Group bootstrap reflects the split unit, not 45 independent deployments.
     fig,axes=plt.subplots(1,2,figsize=(7.1,2.8),layout='constrained')
