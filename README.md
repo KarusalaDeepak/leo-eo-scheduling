@@ -77,3 +77,14 @@ The search includes normalized default weights, equal weights, and 31 draws from
 Downlink-capacity occupancy is payload volume divided by reserved satellite-to-ground capacity, including unused reserved capacity. It is not storage occupancy or measured network congestion. Runs with no completed requests have undefined occupancy and are excluded from its average.
 
 Calibration p-values are paired Wilcoxon results across four satellite-count groups. Raw p=0.5 is unadjusted; Holm-adjusted p=1 accounts for eight comparisons. Neither establishes a difference at the 0.05 threshold, and neither proves equivalence.
+
+## Internal margin-scale sensitivity
+
+Run `python3 scripts/run_margin_scale_sensitivity.py --dataset-dir /path/to/dataset`.
+This exploratory 3-by-3 grid varies the time scale (900, 1800, 3600 seconds)
+and capacity scale (1, 2, 4 GB), keeping the six default weights and the
+0.55/0.45 mixture unchanged. Half/double perturbations probe local sensitivity;
+they do not justify the original scales or select a new default. Every schedule
+undergoes feasibility validation. CSV outputs and the pre-run protocol are saved
+under `results/margin_scale_sensitivity/`. Stress variants are not independent
+deployments. The original 1800-second/2-GB setting remains the default.

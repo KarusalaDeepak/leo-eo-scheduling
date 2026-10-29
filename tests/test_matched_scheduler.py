@@ -19,6 +19,23 @@ def fixture():
 
 
 class Constraints(unittest.TestCase):
+    def test_margin_scales_preserve_defaults_and_feasibility(self):
+        i,t=fixture()
+        original=m.build_plan(i,t,m.Ledger(),('earliest','early'))
+        i['margin_scales']=(1800.,2.)
+        same=m.build_plan(i,t,m.Ledger(),('earliest','early'))
+        self.assertEqual(original, same)
+        i['margin_scales']=(900.,1.)
+        altered=m.build_plan(i,t,m.Ledger(),('earliest','early'))
+        self.assertEqual(original.reservations, altered.reservations)
+        self.assertNotEqual(original.margin, altered.margin)
+
+    def test_invalid_margin_scales(self):
+        for scales in [(0,2),(-1,2),(1800,float('nan'))]:
+            i,t=fixture();i['margin_scales']=scales
+            with self.assertRaises(ValueError):
+                m.build_plan(i,t,m.Ledger(),('earliest','early'))
+
     def test_short_observation_not_extended(self):
         i,t=fixture();i['obs']['a']=[('A',0,9)]
         self.assertIsNone(m.build_plan(i,t,m.Ledger(),('earliest','early')))

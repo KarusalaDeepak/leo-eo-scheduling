@@ -226,7 +226,11 @@ def build_plan(instance, task, ledger, variant, force_sat=None):
     completion = max(d[3] for d in deliveries)
     volume = sum(volumes.values()); capacity = sum((d[3]-d[2])*d[4]/8 for d in deliveries)
     sigmoid = lambda x: 1/(1+math.exp(-min(60,max(-60,x))))
-    margin = .55*sigmoid((task['deadline']-completion)/1800)+.45*sigmoid((capacity-volume)/2)
+    # Optional experimental scales affect ranking only, never feasibility.
+    time_scale, capacity_scale = instance.get('margin_scales', (1800., 2.))
+    if not all(np.isfinite(x) and x > 0 for x in (time_scale, capacity_scale)):
+        raise ValueError('Margin scales must be finite and positive.')
+    margin = .55*sigmoid((task['deadline']-completion)/time_scale)+.45*sigmoid((capacity-volume)/capacity_scale)
     congestion = volume/max(capacity,1e-9)
     return Plan(task['id'],observations,deliveries,relays,records,events,completion,
                 volume,capacity,margin,congestion,min(1,congestion)*(1-margin),
